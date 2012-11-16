@@ -1,45 +1,37 @@
 # CarrierWave for Mongoid
 
-This gem adds support for Mongoid and MongoDB's GridFS to
-[CarrierWave](https://github.com/jnicklas/carrierwave/)
+This gem adds support for Mongoid and MongoDB's GridFS to CarrierWave, see the
+CarrierWave documentation for more detailed usage instructions.
 
-This functionality used to be part of CarrierWave but has since been extracted
-into this gem.
+### This version supports ONLY version of mongoid ~> 2.1
+Keep in mind that if you came up from previous versions you should make a few steps to go with it:
 
-## Installation
+* change(rename in db) field name from `avatar_name` to `avatar`(appropriate to your uploader name)
+* fix you code where you need to operate with uploaded file's filename from `avatar` to `avatar_identifier`
 
-Install the latest release:
+Install it like this:
 
     gem install carrierwave-mongoid
 
-Require it in your code:
+Use it like this:
 
-    require 'carrierwave/mongoid'
+```ruby
+require 'carrierwave/mongoid'
+```
 
-Or, in Rails you can add it to your Gemfile:
+Make sure to disable auto_validation on the mounted column.
 
-    gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
+Using bundler:
 
-## Getting Started
+```ruby
+gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
+```
 
-Follow the "Getting Started" directions in the main
-[Carrierwave repository](https://raw.github.com/jnicklas/carrierwave/).
-
-[Suggested] Add the field to your attr_accessor list for mass assignment
-protection:
-
-    attr_accessible :avatar, :avatar_cache
-
-Now you can cache files by assigning them to the attribute; they will
-automatically be stored when the record is saved. Ex:
-
-    u = User.new
-    u.avatar = File.open('somewhere')
-    u.save!
+This used to be part of CarrierWave but has been extracted.
 
 ## Using MongoDB's GridFS store
 
-You can configure Carrierwave to use GridFS instead of the filesystem. For example:
+You'll need to configure the database and host to use:
 
 ```ruby
 CarrierWave.configure do |config|
@@ -60,8 +52,8 @@ end
 
 Since GridFS doesn't make the files available via HTTP, you'll need to stream
 them yourself. In Rails for example, you could use the `send_data` method. You
-can optionally tell CarrierWave the URL you will serve your images from,
-allowing it to generate the correct URL, by setting eg:
+can tell CarrierWave the URL you will serve your images from, allowing it to
+generate the correct URL, by setting eg:
 
 ```ruby
 CarrierWave.configure do |config|
@@ -69,68 +61,8 @@ CarrierWave.configure do |config|
 end
 ```
 
-Bringing it all together, you can also configure Carrierwave to use Mongoid's
-database connection and default all storage to GridFS. That might look something
-like this:
+## Known issues/ limitations
 
-```ruby
-CarrierWave.configure do |config|
-  config.grid_fs_connection = Mongoid.database
-  config.storage = :grid_fs
-  config.root = Rails.root.join('tmp')
-  config.cache_dir = "uploads"
-end
-```
-
-## Version differences
-
-### 0.2.x
-
-carrierwave-mongoid ~> 0.2.0 is only compatible with Rails 3.2 or higher.
-
-### 0.1.x
-
-carrierwave-mongoid ~> 0.1.1 depends on carrierwave ~> 0.5.7. This version of
-carrierwave is only compatible with Rails 3.1 or earlier.
-
-### Changes from earlier versions of CarrierWave <= 0.5.6
-
-CarrierWave used to have built-in Mongoid support. This gem replaces that
-support and only only supports Mongoid ~> 2.1
-
-You can use `upload_identifier` to retrieve the original name of the uploaded file.
-
-In the earlier version, the mount_uploader-method for mongoid had been defined
-in lib/carrierwave/orm/mongoid. This code has been moved to
-carrierwave/mongoid. If you update from earlier versions, don't forget to adjust
-your require accordingly in your carrierwave-initializer.
-
-The default mount column used to be the name of the upload column plus
-`_filename`. Now it is simply the name of the column. Most of the time, the
-column was called `upload`, so it would have been mounted to `upload_filename`.
-If you'd like to avoid a database migration, simply use the `:mount_on` option
-to specify the field name explicitly. Therefore, you only have to add a
-`_filename` to your column name. For example, if your column is called
-`:upload`:
-
-```ruby
-class Dokument
-  mount_uploader :upload, DokumentUploader, mount_on: :upload_filename
-end
-```
-
-## Known issues and limitations
-
-Note that files mounted in embedded documents aren't saved when parent documents
-are saved. By default, mongoid does not cascade callbacks on embedded
-documents. In order to save the attached files on embedded documents, you must
-either explicitly call save on the embedded documents or you must configure the
-embedded association to cascade the callbacks automatically. For example:
-
-```ruby
-class User
-  embeds_many :pictures, cascade_callbacks: true
-end
-```
-
+If using Mongoid, note that embedded documents files aren't saved when parent documents are saved.
+You must explicitly call save on embedded documents in order to save their attached files.
 You can read more about this [here](https://github.com/jnicklas/carrierwave/issues#issue/81)
