@@ -6,13 +6,6 @@ require 'tempfile'
 require 'carrierwave'
 require 'carrierwave/mongoid'
 
-Mongoid.configure do |config|
-  logger = Logger.new('log/test.log')
-  config.logger = logger
-  config.master = Mongo::Connection.new('localhost', 27017,
-    :logger => logger).db('carrierwave_test')
-end
-
 def file_path( *paths )
   File.expand_path(File.join(File.dirname(__FILE__), 'fixtures', *paths))
 end
@@ -37,9 +30,12 @@ module CarrierWave
         t = Tempfile.new(filename)
         FileUtils.copy_file(file_path(filename), t.path)
 
-        t.stub!(:local_path => "",
-                :original_filename => filename || fake_name,
-                :content_type => mime_type)
+        # This is stupid, but for some reason rspec won't play nice...
+        eval <<-EOF
+        def t.original_filename; '#{fake_name || filename}'; end
+        def t.content_type; '#{mime_type}'; end
+        def t.local_path; path; end
+        EOF
 
         return t
       end
